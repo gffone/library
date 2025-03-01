@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+import "google/api/annotations.proto";
+import "validate/validate.proto";
+
+package library;
+
+option go_package = "/library;library";
+
+service Library{
+  rpc AddBook(AddBookRequest) returns (AddBookResponse) {
+    option (google.api.http) = {
+      post: "/v1/library/book"
+      body: "*"
+    };
+  }
+  rpc GetBookInfo(GetBookInfoRequest) returns (GetBookInfoResponse) {
+    option (google.api.http) = {
+      get: "/v1/library/book_info/{id=*}"
+    };
+  }
+}
+
+message Book{
+  string id = 1 [(validate.rules).string.uuid = true];
+  string name = 2;
+  repeated string author_id = 3 [(validate.rules).repeated = {min_items: 1, max_items: 10}];
+}
+
+message AddBookRequest{
+  string name = 1;
+  repeated string author_id = 3 [(validate.rules).repeated = {min_items: 1, max_items: 10}];
+}
+
+message AddBookResponse{
+  Book book = 1;
+}
+
+message GetBookInfoRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+}
+
+message GetBookInfoResponse {
+  Book book = 1;
+}
