@@ -2,18 +2,21 @@ package app
 
 import (
 	"context"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"library/config"
+	"library/db"
 	generated "library/generated/api/library"
 	"library/internal/controller"
 	"library/internal/usecase/library"
-	"library/internal/usecase/repository"
+	repository "library/internal/usecase/repository/postgres"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -25,7 +28,16 @@ func Run(logger *zap.Logger, cfg *config.Config) {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	repo := repository.NewInMemoryImpl()
+	dbPool, err := pgxpool.New(ctx, cfg.PG.URL)
+	if err != nil {
+		logger.Error("failed to connect to database", zap.Error(err))
+		os.Exit(-1)
+	}
+	defer dbPool.Close()
+
+	db.SetupPostgres(dbPool, logger)
+
+	repo := repository.NewPostgresRepository(dbPool)
 	useCases := library.New(logger, repo, repo)
 
 	ctrl := controller.New(logger, useCases, useCases)
