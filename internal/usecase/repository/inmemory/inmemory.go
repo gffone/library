@@ -1,13 +1,14 @@
-package repository
+package inmemory
 
 import (
 	"context"
 	"library/internal/entity"
+	"library/internal/usecase/repository"
 	"sync"
 )
 
-var _ AuthorRepository = (*inMemoryImpl)(nil)
-var _ BooksRepository = (*inMemoryImpl)(nil)
+var _ repository.AuthorRepository = (*inMemoryImpl)(nil)
+var _ repository.BooksRepository = (*inMemoryImpl)(nil)
 
 type inMemoryImpl struct {
 	authorsMx *sync.RWMutex
